@@ -2,22 +2,15 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
-const char* ssid = "your_wifi_ssid";
-const char* password = "your_wifi_password";
+const char* ssid = "vivo T1";
+const char* password = "devil12345";
 
 ESP8266WebServer server(80);
 
-const int infraredPin = A0;   // Infrared sensor connected to A0
-const int flexPin = A1;       // Flex sensor connected to A1
-const int trigPin = D1;       // Ultrasonic sensor trigger pin connected to D1
-const int echoPin = D2;       // Ultrasonic sensor echo pin connected to D2
-
-unsigned long previousMillis = 0;
-const long interval = 1000;   // Refresh interval in milliseconds
+const int trigPin = D6;  // Ultrasonic sensor trigger pin connected to D1
+const int echoPin = D7;  // Ultrasonic sensor echo pin connected to D2
 
 void handleRoot() {
-  int infraredValue = analogRead(infraredPin);  // Read infrared sensor value
-  int flexValue = analogRead(flexPin);          // Read flex sensor value
   long duration, distance;
 
   digitalWrite(trigPin, LOW);
@@ -28,11 +21,13 @@ void handleRoot() {
   duration = pulseIn(echoPin, HIGH);
   distance = (duration / 2) / 29.1;
 
-  String html = "<html><body>";
-  html += "<h1>Sensor Readings</h1>";
-  html += "<p>Infrared Sensor: " + String(infraredValue) + "</p>";
-  html += "<p>Flex Sensor: " + String(flexValue) + "</p>";
-  html += "<p>Ultrasonic Sensor Distance: " + String(distance) + " cm</p>";
+  String html = "<html><head>";
+  html += "<script>";
+  html += "setTimeout(function() { location.reload(); }, 1000);"; // Refresh the page every 1 second
+  html += "</script>";
+  html += "</head><body>";
+  html += "<h1>Ultrasonic Sensor Reading</h1>";
+  html += "<p>Distance: " + String(distance) + " cm</p>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
@@ -60,13 +55,4 @@ void setup() {
 
 void loop() {
   server.handleClient();
-
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-
-    // Trigger a server update
-    handleRoot();
-  }
 }
