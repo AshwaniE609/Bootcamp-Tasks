@@ -1,0 +1,72 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+
+const char* ssid = "your_wifi_ssid";
+const char* password = "your_wifi_password";
+
+ESP8266WebServer server(80);
+
+const int infraredPin = A0;   // Infrared sensor connected to A0
+const int flexPin = A1;       // Flex sensor connected to A1
+const int trigPin = D1;       // Ultrasonic sensor trigger pin connected to D1
+const int echoPin = D2;       // Ultrasonic sensor echo pin connected to D2
+
+unsigned long previousMillis = 0;
+const long interval = 1000;   // Refresh interval in milliseconds
+
+void handleRoot() {
+  int infraredValue = analogRead(infraredPin);  // Read infrared sensor value
+  int flexValue = analogRead(flexPin);          // Read flex sensor value
+  long duration, distance;
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration / 2) / 29.1;
+
+  String html = "<html><body>";
+  html += "<h1>Sensor Readings</h1>";
+  html += "<p>Infrared Sensor: " + String(infraredValue) + "</p>";
+  html += "<p>Flex Sensor: " + String(flexValue) + "</p>";
+  html += "<p>Ultrasonic Sensor Distance: " + String(distance) + " cm</p>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+
+  Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    // Trigger a server update
+    handleRoot();
+  }
+}
